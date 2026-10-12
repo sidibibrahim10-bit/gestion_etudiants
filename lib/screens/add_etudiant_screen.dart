@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import '../models/etudiant.dart';
 
 class AddEtudiantScreen extends StatefulWidget {
-  const AddEtudiantScreen({super.key});
+  final Etudiant? etudiantAModifier; // Paramètre optionnel pour l'édition
+
+  const AddEtudiantScreen({super.key, this.etudiantAModifier});
 
   @override
   State<AddEtudiantScreen> createState() => _AddEtudiantScreenState();
@@ -12,11 +14,28 @@ class AddEtudiantScreen extends StatefulWidget {
 class _AddEtudiantScreenState extends State<AddEtudiantScreen> {
   final _formKey = GlobalKey<FormState>();
 
-  // Contrôleurs pour les champs du formulaire
-  final _nomController = TextEditingController();
-  final _prenomController = TextEditingController();
-  final _filiereController = TextEditingController();
-  final _emailController = TextEditingController();
+  late final TextEditingController _nomController;
+  late final TextEditingController _prenomController;
+  late final TextEditingController _filiereController;
+  late final TextEditingController _emailController;
+
+  @override
+  void initState() {
+    super.initState();
+    // Si on modifie, on pré-remplit les champs avec les données existantes
+    _nomController = TextEditingController(
+      text: widget.etudiantAModifier?.nom ?? '',
+    );
+    _prenomController = TextEditingController(
+      text: widget.etudiantAModifier?.prenom ?? '',
+    );
+    _filiereController = TextEditingController(
+      text: widget.etudiantAModifier?.filiere ?? '',
+    );
+    _emailController = TextEditingController(
+      text: widget.etudiantAModifier?.email ?? '',
+    );
+  }
 
   @override
   void dispose() {
@@ -29,25 +48,30 @@ class _AddEtudiantScreenState extends State<AddEtudiantScreen> {
 
   void _submitData() {
     if (_formKey.currentState!.validate()) {
-      // Création de l'objet Etudiant
-      final nouveauEtudiant = Etudiant(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
+      final etudiantResultat = Etudiant(
+        // On garde l'ancien ID si on modifie, sinon on en génère un nouveau
+        id:
+            widget.etudiantAModifier?.id ??
+            DateTime.now().millisecondsSinceEpoch.toString(),
         nom: _nomController.text,
         prenom: _prenomController.text,
         filiere: _filiereController.text,
         email: _emailController.text,
       );
 
-      // On retourne l'étudiant créé à l'écran précédent
-      Navigator.pop(context, nouveauEtudiant);
+      Navigator.pop(context, etudiantResultat);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final bool estModeModification = widget.etudiantAModifier != null;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Ajouter un Étudiant'),
+        title: Text(
+          estModeModification ? 'Modifier l\'Étudiant' : 'Ajouter un Étudiant',
+        ),
         centerTitle: true,
       ),
       body: Padding(
@@ -113,9 +137,11 @@ class _AddEtudiantScreenState extends State<AddEtudiantScreen> {
                     backgroundColor: Colors.blue,
                     foregroundColor: Colors.white,
                   ),
-                  child: const Text(
-                    'Enregistrer l\'étudiant',
-                    style: TextStyle(fontSize: 18),
+                  child: Text(
+                    estModeModification
+                        ? 'Mettre à jour'
+                        : 'Enregistrer l\'étudiant',
+                    style: const TextStyle(fontSize: 18),
                   ),
                 ),
               ),
