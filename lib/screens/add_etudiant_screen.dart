@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/etudiant.dart';
 
 class AddEtudiantScreen extends StatefulWidget {
-  final Etudiant? etudiantAModifier; // Paramètre optionnel pour l'édition
+  final Etudiant? etudiantAModifier;
 
   const AddEtudiantScreen({super.key, this.etudiantAModifier});
 
@@ -22,7 +22,6 @@ class _AddEtudiantScreenState extends State<AddEtudiantScreen> {
   @override
   void initState() {
     super.initState();
-    // Si on modifie, on pré-remplit les champs avec les données existantes
     _nomController = TextEditingController(
       text: widget.etudiantAModifier?.nom ?? '',
     );
@@ -49,7 +48,6 @@ class _AddEtudiantScreenState extends State<AddEtudiantScreen> {
   void _submitData() {
     if (_formKey.currentState!.validate()) {
       final etudiantResultat = Etudiant(
-        // On garde l'ancien ID si on modifie, sinon on en génère un nouveau
         id:
             widget.etudiantAModifier?.id ??
             DateTime.now().millisecondsSinceEpoch.toString(),

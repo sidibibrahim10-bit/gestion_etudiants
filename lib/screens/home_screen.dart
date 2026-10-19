@@ -11,7 +11,6 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  // Liste complète des étudiants
   final List<Etudiant> _etudiants = [
     Etudiant(
       id: '1',
@@ -36,7 +35,6 @@ class _HomeScreenState extends State<HomeScreen> {
     ),
   ];
 
-  // Liste filtrée pour la recherche
   List<Etudiant> _filteredEtudiants = [];
   final TextEditingController _searchController = TextEditingController();
 
@@ -53,7 +51,6 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
-  // Fonction de recherche en temps réel
   void _filterEtudiants() {
     final query = _searchController.text.toLowerCase();
     setState(() {
@@ -65,28 +62,41 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  // Navigation vers l'écran d'ajout
-  void _navigateToAddScreen() async {
-    final Etudiant? nouvelEtudiant = await Navigator.push(
+  void _navigateToEditScreen({Etudiant? etudiant}) async {
+    final Etudiant? resultat = await Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => const AddEtudiantScreen()),
+      MaterialPageRoute(
+        builder: (context) => AddEtudiantScreen(etudiantAModifier: etudiant),
+      ),
     );
 
-    if (nouvelEtudiant != null) {
+    if (resultat != null) {
       setState(() {
-        _etudiants.add(nouvelEtudiant);
-        _filterEtudiants(); // Mettre à jour le filtre
+        if (etudiant == null) {
+          _etudiants.add(resultat);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Étudiant ajouté avec succès !'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        } else {
+          final index = _etudiants.indexWhere((e) => e.id == resultat.id);
+          if (index != -1) {
+            _etudiants[index] = resultat;
+          }
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Étudiant mis à jour avec succès !'),
+              backgroundColor: Colors.blue,
+            ),
+          );
+        }
+        _filterEtudiants();
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Étudiant ajouté avec succès !'),
-          backgroundColor: Colors.green,
-        ),
-      );
     }
   }
 
-  // Suppression d'un étudiant avec confirmation
   void _supprimerEtudiant(Etudiant etudiant) {
     setState(() {
       _etudiants.remove(etudiant);
@@ -124,13 +134,11 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       body: Column(
         children: [
-          // En-tête Statistiques & Recherche
           Container(
             padding: const EdgeInsets.all(16.0),
             color: Colors.blue.shade50,
             child: Column(
               children: [
-                // Carte Statistiques rapide
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
@@ -149,7 +157,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                 ),
                 const SizedBox(height: 16),
-                // Barre de recherche
                 TextField(
                   controller: _searchController,
                   decoration: InputDecoration(
@@ -172,8 +179,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
           ),
-
-          // Liste des étudiants
           Expanded(
             child: _filteredEtudiants.isEmpty
                 ? const Center(
@@ -202,6 +207,8 @@ class _HomeScreenState extends State<HomeScreen> {
                           elevation: 2,
                           margin: const EdgeInsets.symmetric(vertical: 6.0),
                           child: ListTile(
+                            onTap: () =>
+                                _navigateToEditScreen(etudiant: etudiant),
                             leading: CircleAvatar(
                               backgroundColor: Colors.blue.shade100,
                               child: Text(
@@ -238,14 +245,13 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: _navigateToAddScreen,
+        onPressed: () => _navigateToEditScreen(),
         icon: const Icon(Icons.add),
         label: const Text('Ajouter'),
       ),
     );
   }
 
-  // Widget personnalisé pour les cartes de statistiques
   Widget _buildStatCard(
     String title,
     String value,

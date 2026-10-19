@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../viewmodels/login_view_model.dart';
 import 'home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -10,10 +11,10 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  // Contrôleurs pour récupérer les valeurs des champs de texte
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+  final LoginViewModel _viewModel = LoginViewModel();
 
   @override
   void dispose() {
@@ -22,17 +23,28 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  void _login() {
+  void _handleLogin() async {
     if (_formKey.currentState!.validate()) {
-      // 1. Afficher le message de succès
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Connexion réussie !')));
-
-      // 2. Rediriger vers l'écran principal (HomeScreen)
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const HomeScreen()),
+      final success = await _viewModel.login(
+        _emailController.text,
+        _passwordController.text,
       );
+
+      if (!mounted) return;
+
+      if (success) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const HomeScreen()),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(_viewModel.errorMessage ?? 'Échec de connexion'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -40,7 +52,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Gestion Étudiants - Connexion'),
+        title: const Text('Connexion - Gestion Étudiants'),
         centerTitle: true,
       ),
       body: Padding(
@@ -54,7 +66,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 children: [
                   const Icon(Icons.school, size: 80, color: Colors.blue),
                   const SizedBox(height: 32),
-                  // Champ Email
                   TextFormField(
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
@@ -63,15 +74,11 @@ class _LoginScreenState extends State<LoginScreen> {
                       border: OutlineInputBorder(),
                       prefixIcon: Icon(Icons.email),
                     ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Veuillez entrer votre email';
-                      }
-                      return null;
-                    },
+                    validator: (value) => value == null || value.isEmpty
+                        ? 'Veuillez entrer votre email'
+                        : null,
                   ),
                   const SizedBox(height: 16),
-                  // Champ Mot de passe
                   TextFormField(
                     controller: _passwordController,
                     obscureText: true,
@@ -80,29 +87,26 @@ class _LoginScreenState extends State<LoginScreen> {
                       border: OutlineInputBorder(),
                       prefixIcon: Icon(Icons.lock),
                     ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Veuillez entrer votre mot de passe';
-                      }
-                      return null;
-                    },
+                    validator: (value) => value == null || value.isEmpty
+                        ? 'Veuillez entrer votre mot de passe'
+                        : null,
                   ),
                   const SizedBox(height: 24),
-                  // Bouton de connexion corrigé
                   SizedBox(
                     width: double.infinity,
                     height: 50,
                     child: ElevatedButton(
-                      onPressed: _login,
+                      onPressed: _viewModel.isLoading ? null : _handleLogin,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.blue,
                         foregroundColor: Colors.white,
-                        elevation: 2,
                       ),
-                      child: const Text(
-                        'Se connecter',
-                        style: TextStyle(fontSize: 18),
-                      ),
+                      child: _viewModel.isLoading
+                          ? const CircularProgressIndicator(color: Colors.white)
+                          : const Text(
+                              'Se connecter',
+                              style: TextStyle(fontSize: 18),
+                            ),
                     ),
                   ),
                 ],
