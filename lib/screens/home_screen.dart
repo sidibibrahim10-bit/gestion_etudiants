@@ -1,297 +1,188 @@
 import 'package:flutter/material.dart';
 
-import '../models/etudiant.dart';
-import 'add_etudiant_screen.dart';
+import 'profile_screen.dart';
+import 'courses_screen.dart';
+import 'grades_screen.dart';
 
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
-
-  @override
-  State<HomeScreen> createState() => _HomeScreenState();
-}
-
-class _HomeScreenState extends State<HomeScreen> {
-  final List<Etudiant> _etudiants = [
-    Etudiant(
-      id: '1',
-      nom: 'Diallo',
-      prenom: 'Mamadou',
-      filiere: 'Génie Logiciel',
-      email: 'mamadou.diallo@email.com',
-    ),
-    Etudiant(
-      id: '2',
-      nom: 'Kone',
-      prenom: 'Aissatou',
-      filiere: 'Systèmes et Réseaux',
-      email: 'aissatou.kone@email.com',
-    ),
-    Etudiant(
-      id: '3',
-      nom: 'Traore',
-      prenom: 'Ibrahim',
-      filiere: 'Intelligence Artificielle',
-      email: 'ibrahim.traore@email.com',
-    ),
-  ];
-
-  List<Etudiant> _filteredEtudiants = [];
-  final TextEditingController _searchController = TextEditingController();
-
-  @override
-  void initState() {
-    super.initState();
-    _filteredEtudiants = _etudiants;
-    _searchController.addListener(_filterEtudiants);
-  }
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
-  }
-
-  void _filterEtudiants() {
-    final query = _searchController.text.toLowerCase();
-    setState(() {
-      _filteredEtudiants = _etudiants.where((etudiant) {
-        final fullName = '${etudiant.prenom} ${etudiant.nom}'.toLowerCase();
-        final filiere = etudiant.filiere.toLowerCase();
-        return fullName.contains(query) || filiere.contains(query);
-      }).toList();
-    });
-  }
-
-  void _navigateToEditScreen({Etudiant? etudiant}) async {
-    final Etudiant? resultat = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => AddEtudiantScreen(etudiantAModifier: etudiant),
-      ),
-    );
-
-    if (resultat != null) {
-      setState(() {
-        if (etudiant == null) {
-          _etudiants.add(resultat);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Étudiant ajouté avec succès !'),
-              backgroundColor: Colors.green,
-            ),
-          );
-        } else {
-          final index = _etudiants.indexWhere((e) => e.id == resultat.id);
-          if (index != -1) {
-            _etudiants[index] = resultat;
-          }
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Étudiant mis à jour avec succès !'),
-              backgroundColor: Colors.blue,
-            ),
-          );
-        }
-        _filterEtudiants();
-      });
-    }
-  }
-
-  void _supprimerEtudiant(Etudiant etudiant) {
-    setState(() {
-      _etudiants.remove(etudiant);
-      _filterEtudiants();
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('${etudiant.prenom} ${etudiant.nom} supprimé'),
-        action: SnackBarAction(
-          label: 'Annuler',
-          onPressed: () {
-            setState(() {
-              _etudiants.add(etudiant);
-              _filterEtudiants();
-            });
-          },
-        ),
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Gestion des Étudiants'),
+        title: const Text('Tableau de bord'),
         centerTitle: true,
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
-            tooltip: 'Se déconnecter',
-            onPressed: () => Navigator.pop(context),
+            tooltip: 'Déconnexion',
+            onPressed: () {
+              // Retour à l'écran de connexion
+              Navigator.pop(context);
+            },
           ),
         ],
       ),
-      body: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(16.0),
-            color: Colors.blue.shade50,
-            child: Column(
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Message de bienvenue
+            const Text(
+              'Bonjour, Aïssata',
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Bienvenue sur votre application de gestion des étudiants.',
+              style: TextStyle(color: Colors.grey, fontSize: 16),
+            ),
+            const SizedBox(height: 24),
+
+            // Indicateurs visuels (Statistiques / Cartes rapides)
+            const Text(
+              'Indicateurs clés',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+
+            // Utilisation d'un Wrap pour éviter tout débordement horizontal
+            Wrap(
+              spacing: 16.0,
+              runSpacing: 16.0,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    _buildStatCard(
-                      'Total Étudiants',
-                      '${_etudiants.length}',
-                      Icons.group,
-                      Colors.blue,
-                    ),
-                    _buildStatCard(
-                      'Filières Actives',
-                      '3',
-                      Icons.school,
-                      Colors.orange,
-                    ),
-                  ],
+                _buildIndicatorCard(
+                  context,
+                  title: 'Cours',
+                  value: '4',
+                  icon: Icons.book,
+                  color: Colors.blue,
                 ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: _searchController,
-                  decoration: InputDecoration(
-                    hintText: 'Rechercher par nom ou filière...',
-                    prefixIcon: const Icon(Icons.search),
-                    suffixIcon: _searchController.text.isNotEmpty
-                        ? IconButton(
-                            icon: const Icon(Icons.clear),
-                            onPressed: () => _searchController.clear(),
-                          )
-                        : null,
-                    filled: true,
-                    fillColor: Colors.white,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide.none,
-                    ),
-                  ),
+                _buildIndicatorCard(
+                  context,
+                  title: 'Notes',
+                  value: '15/20',
+                  icon: Icons.grade,
+                  color: Colors.orange,
+                ),
+                _buildIndicatorCard(
+                  context,
+                  title: 'Notifications',
+                  value: '2',
+                  icon: Icons.notifications,
+                  color: Colors.red,
                 ),
               ],
             ),
-          ),
-          Expanded(
-            child: _filteredEtudiants.isEmpty
-                ? const Center(
-                    child: Text(
-                      'Aucun étudiant trouvé.',
-                      style: TextStyle(fontSize: 16, color: Colors.grey),
+
+            const SizedBox(height: 32),
+            const Text(
+              'Navigation principale',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+
+            // Boutons de navigation vers les autres écrans du TP
+            Card(
+              elevation: 2,
+              child: ListTile(
+                leading: const Icon(Icons.book, color: Colors.blue),
+                title: const Text('Mes Cours'),
+                subtitle: const Text('Voir la liste dynamique des cours'),
+                trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const CoursesScreen(),
                     ),
-                  )
-                : ListView.builder(
-                    itemCount: _filteredEtudiants.length,
-                    padding: const EdgeInsets.all(12.0),
-                    itemBuilder: (context, index) {
-                      final etudiant = _filteredEtudiants[index];
-                      return Dismissible(
-                        key: Key(etudiant.id),
-                        direction: DismissDirection.endToStart,
-                        background: Container(
-                          alignment: Alignment.centerRight,
-                          padding: const EdgeInsets.only(right: 20.0),
-                          color: Colors.red,
-                          child: const Icon(Icons.delete, color: Colors.white),
-                        ),
-                        onDismissed: (direction) =>
-                            _supprimerEtudiant(etudiant),
-                        child: Card(
-                          elevation: 2,
-                          margin: const EdgeInsets.symmetric(vertical: 6.0),
-                          child: ListTile(
-                            onTap: () =>
-                                _navigateToEditScreen(etudiant: etudiant),
-                            leading: CircleAvatar(
-                              backgroundColor: Colors.blue.shade100,
-                              child: Text(
-                                etudiant.prenom[0],
-                                style: const TextStyle(
-                                  color: Colors.blue,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                            title: Text(
-                              '${etudiant.prenom} ${etudiant.nom}',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            subtitle: Text(
-                              '${etudiant.filiere}\n${etudiant.email}',
-                            ),
-                            isThreeLine: true,
-                            trailing: IconButton(
-                              icon: const Icon(
-                                Icons.delete_outline,
-                                color: Colors.red,
-                              ),
-                              onPressed: () => _supprimerEtudiant(etudiant),
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-          ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _navigateToEditScreen(),
-        icon: const Icon(Icons.add),
-        label: const Text('Ajouter'),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 8),
+            Card(
+              elevation: 2,
+              child: ListTile(
+                leading: const Icon(Icons.grade, color: Colors.orange),
+                title: const Text('Mes Notes'),
+                subtitle: const Text('Consulter vos notes et appréciations'),
+                trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const GradesScreen(),
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 8),
+            Card(
+              elevation: 2,
+              child: ListTile(
+                leading: const Icon(Icons.person, color: Colors.green),
+                title: const Text('Mon Profil'),
+                subtitle: const Text('Informations personnelles et filière'),
+                trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ProfileScreen(),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildStatCard(
-    String title,
-    String value,
-    IconData icon,
-    Color color,
-  ) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            blurRadius: 5,
-            spreadRadius: 2,
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: color, size: 30),
-          const SizedBox(width: 12),
-          Column(
+  // Widget personnalisé pour les cartes d'indicateurs visuels
+  Widget _buildIndicatorCard(
+    BuildContext context, {
+    required String title,
+    required String value,
+    required IconData icon,
+    required Color color,
+  }) {
+    // Calcul de la largeur pour que les cartes s'adaptent bien à l'écran
+    double screenWidth = MediaQuery.of(context).size.width;
+    double cardWidth = (screenWidth > 600) ? 170 : (screenWidth - 48) / 2;
+
+    return SizedBox(
+      width: cardWidth,
+      child: Card(
+        elevation: 3,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Icon(icon, color: color, size: 30),
+              const SizedBox(height: 12),
               Text(
                 title,
-                style: const TextStyle(fontSize: 12, color: Colors.grey),
+                style: const TextStyle(color: Colors.grey, fontSize: 14),
               ),
+              const SizedBox(height: 4),
               Text(
                 value,
                 style: const TextStyle(
-                  fontSize: 18,
+                  fontSize: 20,
                   fontWeight: FontWeight.bold,
                 ),
               ),
             ],
           ),
-        ],
+        ),
       ),
     );
   }

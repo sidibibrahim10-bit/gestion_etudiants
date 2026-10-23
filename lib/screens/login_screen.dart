@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../viewmodels/login_view_model.dart';
 import 'home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -11,10 +10,10 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _formKey = GlobalKey<FormState>();
-  final LoginViewModel _viewModel = LoginViewModel();
+  bool _obscurePassword = true;
 
   @override
   void dispose() {
@@ -23,28 +22,19 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  void _handleLogin() async {
+  void _submitLogin() {
     if (_formKey.currentState!.validate()) {
-      final success = await _viewModel.login(
-        _emailController.text,
-        _passwordController.text,
+      // Si la saisie est valide, on simule la connexion et on ouvre le tableau de bord
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Connexion réussie ! Bienvenue.'),
+          backgroundColor: Colors.green,
+        ),
       );
-
-      if (!mounted) return;
-
-      if (success) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const HomeScreen()),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(_viewModel.errorMessage ?? 'Échec de connexion'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const HomeScreen()),
+      );
     }
   }
 
@@ -65,48 +55,87 @@ class _LoginScreenState extends State<LoginScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Icon(Icons.school, size: 80, color: Colors.blue),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Bienvenue !',
+                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Veuillez vous connecter pour continuer',
+                    style: TextStyle(color: Colors.grey),
+                  ),
                   const SizedBox(height: 32),
+
+                  // Champ E-mail
                   TextFormField(
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
                     decoration: const InputDecoration(
-                      labelText: 'Adresse Email',
+                      labelText: 'Adresse e-mail',
                       border: OutlineInputBorder(),
                       prefixIcon: Icon(Icons.email),
                     ),
-                    validator: (value) => value == null || value.isEmpty
-                        ? 'Veuillez entrer votre email'
-                        : null,
+                    validator: (value) {
+                      final email = value?.trim() ?? '';
+                      if (email.isEmpty) {
+                        return 'Saisissez votre adresse e-mail.';
+                      }
+                      if (!email.contains('@')) {
+                        return 'Adresse e-mail invalide.';
+                      }
+                      return null;
+                    },
                   ),
                   const SizedBox(height: 16),
+
+                  // Champ Mot de passe
                   TextFormField(
                     controller: _passwordController,
-                    obscureText: true,
-                    decoration: const InputDecoration(
+                    obscureText: _obscurePassword,
+                    decoration: InputDecoration(
                       labelText: 'Mot de passe',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.lock),
+                      border: const OutlineInputBorder(),
+                      prefixIcon: const Icon(Icons.lock),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscurePassword
+                              ? Icons.visibility
+                              : Icons.visibility_off,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _obscurePassword = !_obscurePassword;
+                          });
+                        },
+                      ),
                     ),
-                    validator: (value) => value == null || value.isEmpty
-                        ? 'Veuillez entrer votre mot de passe'
-                        : null,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Veuillez entrer votre mot de passe.';
+                      }
+                      if (value.length < 4) {
+                        return 'Le mot de passe est trop court.';
+                      }
+                      return null;
+                    },
                   ),
                   const SizedBox(height: 24),
+
+                  // Bouton Se connecter
                   SizedBox(
                     width: double.infinity,
                     height: 50,
                     child: ElevatedButton(
-                      onPressed: _viewModel.isLoading ? null : _handleLogin,
+                      onPressed: _submitLogin,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.blue,
                         foregroundColor: Colors.white,
                       ),
-                      child: _viewModel.isLoading
-                          ? const CircularProgressIndicator(color: Colors.white)
-                          : const Text(
-                              'Se connecter',
-                              style: TextStyle(fontSize: 18),
-                            ),
+                      child: const Text(
+                        'Se connecter',
+                        style: TextStyle(fontSize: 18),
+                      ),
                     ),
                   ),
                 ],
